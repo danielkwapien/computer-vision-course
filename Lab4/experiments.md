@@ -261,5 +261,52 @@ train Loss: 0.1555 AUC: 0.9811
 val Loss: 1.0642 AUC: 0.7511
 
 
+3. VGG16
 
+It has a horrible performance, does not even overfit, the AUC is 0.5 or below
 
+Epoch 9/9
+
+train Loss: 0.8708 AUC: 0.4858
+
+val Loss: 0.8426 AUC: 0.4557
+
+4. Efficient Net
+
+It has also very good performance, but not as good as ResNet
+
+Epoch 9/9
+
+train Loss: 0.2141 AUC: 0.9657
+
+val Loss: 0.6480 AUC: 0.7541
+
+Although we have the same problem with overfitting
+
+5. SqueezeNet
+
+SqueezeNet provides good results without too much overfitting, but they definitely could be better.
+
+Epoch 9/9
+
+train Loss: 0.4860 AUC: 0.7786
+
+val Loss: 0.5344 AUC: 0.7067
+
+6. ConvXNet
+
+Although it is a big model, it does not perform good
+
+---
+**Second iteration**
+
+1. ResNet
+
+By doing more transformations we get a better generalization, but we need
+further training:
+
+Epoch 19/19
+
+train Loss: 0.4397 AUC: 0.8186
+
+val Loss: 0.5074 AUC: 0.7461

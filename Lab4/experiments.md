@@ -133,8 +133,101 @@ $AUC = 0.5637$
 4
 Use num workers and pin_memory to speed up training
 
+---
 5
-__
+```python
+#Example network
+class CustomNet(nn.Module):
+    def __init__(self):
+        # In the constructor we will specify those processing blocks which require learnable parameters
+        # We just define them to ensure persistence during training, although they will remain disconnected
+        # until we define a processing pipeline in forward method.
+        super(CustomNet, self).__init__()
+
+        #2D convolution to operate over RGB images
+        self.conv1 = nn.Conv2d(3, 8, 5)
+        # Maxpooling with kernel 2x2 and stride=2
+        self.pool = nn.MaxPool2d(2, 2)
+        # 2D convolution
+        self.conv2 = nn.Conv2d(8, 16, 3)
+        # 2D convolution
+        self.conv3 = nn.Conv2d(16, 32, 3)
+        # 2D convolution
+        self.conv4 = nn.Conv2d(32, 64, 3)
+        # Fully-connected layer which expects a linearized vector input (after flattening)
+        # and produces 120 channels at the output
+        self.fc1 = nn.Linear(21632, 1000)
+        # Fully-connected layer 
+        self.fc2 = nn.Linear(1000, 128)
+        # Fully-connected layer 
+        self.fc3 = nn.Linear(128, 32)
+        # Fully-connected layer 
+        self.fc4 = nn.Linear(32, 2)
+
+    #In forward method we connect layers and define the processing pipeline of the network
+    def forward(self, x):
+        #Convolutional Blocks => Conv -> Relu -> pool
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        # x = self.pool(F.relu(self.conv4(x)))
+        #Flatten method vectorizes the spatial output of size hxwxchannels into a vector of length h*w*channels
+        #by setting the parameter to 1, we start to flatten in dim=1 and do not vectorize the dimension representing
+        #the images in the batch
+        x = x.flatten(1)
+        
+        #Fully connected blocks => Linear -> Relu
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = self.fc4(x)
+
+        return x
+
+#Repeat network definition
+customNet = CustomNet()
+customNet.to(device) #copy the network to the device (gpu)
+#Loss function
+criterion = nn.CrossEntropyLoss()
+
+# SGD with momentum 
+optimizer_ft = optim.Adam(customNet.parameters(), lr=1e-5)
+
+# An lr strategy which decreases lr by a factor of 0.1 every 10 epochs
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
+```
+
+We get a AUC of 0.55 more or less and a loss of 0.58
+
+---
+6
+
+Now the same but with a lr of 1e-4 it goes really better, now we get:
+
+AUC=0.68, Loss=0.55
+
+But the validation is AUC=0.62, which is a sign of overfitting, after the 10th epoch the plateu starts to appear
+
+---
+7 
+
+Now with lr of 1e-3 it starts well, there is a plateu and after decreasing the lr it goes down like
+
+![img.png](media/_2.png)
+
+AUC=0.77 and Loss of 0.49, but now there is really overfitting, the validation loss does not go above 0.6.
+
+---
+8 
+
+Finally, lets implement the plateu scheduler. It worsens it since it does not
+really take the learning rate down
+
+---
+9 
+
+Now we have tried a bigger network, but, as it can be expectable, it does not really what to do since we do not have much data, so we will use a bigger
+dataset with 1000 thousand images
 
 
 ## 2. Fine-tuning
@@ -143,6 +236,30 @@ __
 
 1. AlexNet
 
-A bit of overfitting, need to try regularization techniques and trian for more epchos
-$$AUC = 0.6731$$, $$Loss = 0.5317$$
+With `optimizer_ft = optim.SGD(ftNet.parameters(), lr=1e-3, momentum=0.9)` 
+we have, for 10 epochs:
+
+train Loss: 0.5217 AUC: 0.7274
+val Loss: 0.5830 AUC: 0.6390
+
+Without Plateu
+
+2. ResNet
+
+Works a lot better, with the same optimizer and the same epochs
+the only problem is that we start to have overfitting, we should work on better transforms
+for better generalization. 
+
+The AUC is almost the same in validation for
+all the training
+
+Epoch 9/9
+
+
+train Loss: 0.1555 AUC: 0.9811
+
+val Loss: 1.0642 AUC: 0.7511
+
+
+
 

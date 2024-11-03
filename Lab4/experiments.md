@@ -229,7 +229,11 @@ really take the learning rate down
 Now we have tried a bigger network, but, as it can be expectable, it does not really what to do since we do not have much data, so we will use a bigger
 dataset with 1000 thousand images
 
+**FINAL**
 
+![img.png](img.png)
+
+![img_1.png](img_1.png)
 ## 2. Fine-tuning
 
 ### 2.1. Architecture
